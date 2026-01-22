@@ -42,6 +42,24 @@ def get_task_by_video(video_id: str, platform: str):
         db.close()
 
 
+def get_all_tasks(limit: int = 100):
+    db = next(get_db())
+    try:
+        tasks = (
+            db.query(VideoTask)
+            .order_by(VideoTask.created_at.desc())
+            .limit(limit)
+            .all()
+        )
+        return tasks
+    except Exception as e:
+        logger.error(f"Failed to get all tasks: {e}")
+        return []
+    finally:
+        db.close()
+
+
+
 # 删除任务
 def delete_task_by_video(video_id: str, platform: str):
     db = next(get_db())

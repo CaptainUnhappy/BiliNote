@@ -73,3 +73,12 @@ export const get_task_status = async (task_id: string) => {
     throw e // 抛出错误以便调用方处理
   }
 }
+
+export const get_history = async () => {
+  try {
+    return await request.get('/history')
+  } catch (e) {
+    console.error('❌ 获取历史记录出错', e)
+    throw e
+  }
+}

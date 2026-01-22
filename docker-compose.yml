@@ -13,11 +13,7 @@ services:
       - BACKEND_PORT=${BACKEND_PORT}
       - BACKEND_HOST=${BACKEND_HOST}
     volumes:
-      # 数据持久化 - 所有用户共享数据
-      - bilinote_data:/app/data                    # 数据库文件
-      - bilinote_notes:/app/note_results           # 笔记结果
-      - bilinote_screenshots:/app/static/screenshots  # 截图
-      - bilinote_uploads:/app/uploads              # 上传文件
+      - ./docker_data:/app
     expose:
       - "${BACKEND_PORT}"  # 不再对外暴露，用于 nginx 内部通信
     privileged: true
@@ -45,13 +41,3 @@ services:
       - backend
       - frontend
 
-# 命名卷 - 数据持久化和用户间共享
-volumes:
-  bilinote_data:
-    name: bilinote_data
-  bilinote_notes:
-    name: bilinote_notes
-  bilinote_screenshots:
-    name: bilinote_screenshots
-  bilinote_uploads:
-    name: bilinote_uploads

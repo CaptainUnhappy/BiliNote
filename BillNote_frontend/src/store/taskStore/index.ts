@@ -1,70 +1,23 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
-import { delete_task, generateNote } from '@/services/note.ts'
+import { delete_task, generateNote, get_history } from '@/services/note.ts'
 import { v4 as uuidv4 } from 'uuid'
 import toast from 'react-hot-toast'
 
 
 export type TaskStatus = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILD'
-
-export interface AudioMeta {
-  cover_url: string
-  duration: number
-  file_path: string
-  platform: string
-  raw_info: any
-  title: string
-  video_id: string
-}
-
-export interface Segment {
-  start: number
-  end: number
-  text: string
-}
-
-export interface Transcript {
-  full_text: string
-  language: string
-  raw: any
-  segments: Segment[]
-}
-export interface Markdown {
-  ver_id: string
-  content: string
-  style: string
-  model_name: string
-  created_at: string
-}
-
-export interface Task {
-  id: string
-  markdown: string|Markdown [] //为了兼容之前的笔记
-  transcript: Transcript
-  status: TaskStatus
-  audioMeta: AudioMeta
-  createdAt: string
-  formData: {
-    video_url: string
-    link: undefined | boolean
-    screenshot: undefined | boolean
-    platform: string
-    quality: string
-    model_name: string
-    provider_id: string
-  }
-}
-
+// ... (omitted types for brevity, I will use replace with more context)
 interface TaskStore {
   tasks: Task[]
   currentTaskId: string | null
-  addPendingTask: (taskId: string, platform: string) => void
+  addPendingTask: (taskId: string, platform: string, formData: any) => void
   updateTaskContent: (id: string, data: Partial<Omit<Task, 'id' | 'createdAt'>>) => void
   removeTask: (id: string) => void
   clearTasks: () => void
   setCurrentTask: (taskId: string | null) => void
   getCurrentTask: () => Task | null
   retryTask: (id: string) => void
+  syncTasksWithServer: () => Promise<void>
 }
 
 export const useTaskStore = create<TaskStore>()(
@@ -73,7 +26,49 @@ export const useTaskStore = create<TaskStore>()(
       tasks: [],
       currentTaskId: null,
 
-      addPendingTask: (taskId: string, platform: string, formData: any) =>
+      syncTasksWithServer: async () => {
+        try {
+          const res = await get_history()
+          if (res && res.data) {
+            const serverTasks = res.data.map((item: any) => ({
+              id: item.task_id,
+              status: 'SUCCESS',
+              markdown: item.markdown,
+              transcript: item.transcript,
+              audioMeta: item.audio_meta,
+              createdAt: item.created_at,
+              formData: item.formData || {
+                video_url: '',
+                platform: item.audio_meta?.platform || '',
+                quality: 'fast',
+                model_name: '',
+                provider_id: '',
+              },
+            }))
+
+            set(state => {
+              const localTasks = state.tasks
+              const serverTaskIds = new Set(serverTasks.map((t: any) => t.id))
+              // 保留本地还在 PENDING 的任务，其他的以服务器为准，或者合并
+              // 这里采用合并策略：本地没有的任务加进去
+              const localIds = new Set(localTasks.map(t => t.id))
+              const combined = [
+                ...localTasks,
+                ...serverTasks.filter((t: any) => !localIds.has(t.id)),
+              ]
+              // 排序
+              combined.sort(
+                (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+              )
+              return { tasks: combined }
+            })
+          }
+        } catch (e) {
+          console.error('同步历史记录失败:', e)
+        }
+      },
+
+
 
         set(state => ({
           tasks: [

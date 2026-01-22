@@ -10,7 +10,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks, UploadFile, File
 from pydantic import BaseModel, validator, field_validator
 from dataclasses import asdict
 
-from app.db.video_task_dao import get_task_by_video
+from app.db.video_task_dao import get_task_by_video, get_all_tasks
 from app.enmus.exception import NoteErrorEnum
 from app.enmus.note_enums import DownloadQuality
 from app.exceptions.note import NoteError
@@ -114,6 +114,28 @@ def delete_task(data: RecordRequest):
         return R.success(msg='删除成功')
     except Exception as e:
         return R.error(msg=e)
+
+
+@router.get("/history")
+def get_history_list(limit: int = 50):
+    try:
+        tasks = get_all_tasks(limit)
+        results = []
+        for task in tasks:
+            result_path = os.path.join(NOTE_OUTPUT_DIR, f"{task.task_id}.json")
+            if os.path.exists(result_path):
+                try:
+                    with open(result_path, "r", encoding="utf-8") as f:
+                        data = json.load(f)
+                        # 注入元数据供前端使用
+                        data['task_id'] = task.task_id
+                        data['created_at'] = task.created_at.isoformat()
+                        results.append(data)
+                except Exception:
+                    continue
+        return R.success(results)
+    except Exception as e:
+        return R.error(msg=str(e))
 
 
 @router.post("/upload")

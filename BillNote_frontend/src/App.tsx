@@ -19,15 +19,18 @@ import { useEffect } from 'react'
 import { systemCheck } from '@/services/system.ts'
 import { useCheckBackend } from '@/hooks/useCheckBackend.ts'
 import BackendInitDialog from '@/components/BackendInitDialog'
+import { useTaskStore } from '@/store/taskStore'
 
 function App() {
   useTaskPolling(3000) // 每 3 秒轮询一次
   const { loading, initialized } = useCheckBackend()
+  const syncTasksWithServer = useTaskStore(state => state.syncTasksWithServer)
 
   // 在后端初始化完成后执行系统检查
   useEffect(() => {
     if (initialized) {
       systemCheck()
+      syncTasksWithServer() // 同步服务器历史记录
     }
   }, [initialized])
 
