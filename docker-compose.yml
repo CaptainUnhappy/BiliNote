@@ -21,6 +21,8 @@ services:
       - ./docker_data/notes:/app/note_results
       - ./docker_data/screenshots:/app/static/screenshots
       - ./docker_data/uploads:/app/uploads
+      # 持久化模型文件，避免每次重启重复下载
+      - ./docker_data/models:/app/models
     expose:
       - "${BACKEND_PORT}"  # 不再对外暴露，用于 nginx 内部通信
     privileged: true
