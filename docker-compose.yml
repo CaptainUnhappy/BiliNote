@@ -1,19 +1,28 @@
-
 services:
   backend:
     container_name: bilinote-backend
     build:
       context: .
       dockerfile: backend/Dockerfile
+      args:
+        HTTP_PROXY: http://172.17.0.1:7890
+        HTTPS_PROXY: http://172.17.0.1:7890
     env_file:
       - .env
     environment:
       - BACKEND_PORT=${BACKEND_PORT}
       - BACKEND_HOST=${BACKEND_HOST}
     volumes:
-      - ./backend:/app
+      # 数据持久化 - 所有用户共享数据
+      - bilinote_data:/app/data                    # 数据库文件
+      - bilinote_notes:/app/note_results           # 笔记结果
+      - bilinote_screenshots:/app/static/screenshots  # 截图
+      - bilinote_uploads:/app/uploads              # 上传文件
     expose:
       - "${BACKEND_PORT}"  # 不再对外暴露，用于 nginx 内部通信
+    privileged: true
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
 
   frontend:
     container_name: bilinote-frontend
@@ -35,3 +44,14 @@ services:
     depends_on:
       - backend
       - frontend
+
+# 命名卷 - 数据持久化和用户间共享
+volumes:
+  bilinote_data:
+    name: bilinote_data
+  bilinote_notes:
+    name: bilinote_notes
+  bilinote_screenshots:
+    name: bilinote_screenshots
+  bilinote_uploads:
+    name: bilinote_uploads

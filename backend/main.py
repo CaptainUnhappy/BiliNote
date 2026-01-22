@@ -24,17 +24,15 @@ load_dotenv()
 # 读取 .env 中的路径
 static_path = os.getenv('STATIC', '/static')
 out_dir = os.getenv('OUT_DIR', './static/screenshots')
+data_dir = os.getenv('DATA_DIR', 'data')
 
-# 自动创建本地目录（static 和 static/screenshots）
+# 自动创建本地目录（data, static, static/screenshots, uploads）
+# data 目录用于存储数据库，实现用户间数据共享
 static_dir = "static"
 uploads_dir = "uploads"
-if not os.path.exists(static_dir):
-    os.makedirs(static_dir)
-if not os.path.exists(uploads_dir):
-    os.makedirs(uploads_dir)
-
-if not os.path.exists(out_dir):
-    os.makedirs(out_dir)
+for directory in [data_dir, static_dir, uploads_dir, out_dir]:
+    if not os.path.exists(directory):
+        os.makedirs(directory)
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):

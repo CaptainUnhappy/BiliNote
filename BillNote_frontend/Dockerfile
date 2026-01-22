@@ -10,6 +10,11 @@ WORKDIR /app
 # 拷贝前端源码
 COPY ./BillNote_frontend /app
 
+# 设置构建时环境变量
+# 生产环境使用空值，让前端使用 /api 路径通过 nginx 反向代理
+ENV VITE_API_BASE_URL=""
+ENV VITE_SCREENSHOT_BASE_URL="/static/screenshots"
+
 # 安装依赖并构建
 RUN pnpm install && pnpm run build
 
