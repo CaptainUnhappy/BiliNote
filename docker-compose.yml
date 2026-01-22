@@ -13,7 +13,11 @@ services:
       - BACKEND_PORT=${BACKEND_PORT}
       - BACKEND_HOST=${BACKEND_HOST}
     volumes:
-      - ./docker_data:/app
+      # 数据持久化 - 映射具体的子目录，避免覆盖 /app 下的源码
+      - ./docker_data/data:/app/data
+      - ./docker_data/notes:/app/note_results
+      - ./docker_data/screenshots:/app/static/screenshots
+      - ./docker_data/uploads:/app/uploads
     expose:
       - "${BACKEND_PORT}"  # 不再对外暴露，用于 nginx 内部通信
     privileged: true
