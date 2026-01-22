@@ -68,8 +68,7 @@ export const useTaskStore = create<TaskStore>()(
         }
       },
 
-
-
+      addPendingTask: (taskId: string, platform: string, formData: any) =>
         set(state => ({
           tasks: [
             {
