@@ -4,6 +4,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+      # 构建时代理（用于 pip install）
       args:
         HTTP_PROXY: http://172.17.0.1:7890
         HTTPS_PROXY: http://172.17.0.1:7890
@@ -12,6 +13,8 @@ services:
     environment:
       - BACKEND_PORT=${BACKEND_PORT}
       - BACKEND_HOST=${BACKEND_HOST}
+      # 显式注入代理，确保运行时生效
+      - LLM_PROXY=${LLM_PROXY}
     volumes:
       # 数据持久化 - 映射具体的子目录，避免覆盖 /app 下的源码
       - ./docker_data/data:/app/data
@@ -21,6 +24,7 @@ services:
     expose:
       - "${BACKEND_PORT}"  # 不再对外暴露，用于 nginx 内部通信
     privileged: true
+    # 关键配置：允许通过域名访问宿主机
     extra_hosts:
       - "host.docker.internal:host-gateway"
 

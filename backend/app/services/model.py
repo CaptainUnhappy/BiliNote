@@ -87,8 +87,22 @@ class ModelService:
             provider = ProviderService.get_provider_by_id(provider_id)
 
             models = ModelService.get_model_list(provider["id"], verbose=verbose)
+            
+            # 如果 models 是空列表，说明获取失败或无模型
+            if isinstance(models, list) and not models:
+                return {"models": []}
+
             print(type(models))
-            serializable_models = [m.dict() for m in models.data]
+            # 兼容 OpenAI 返回对象或直接列表的情况
+            if hasattr(models, 'data'):
+                serializable_models = [m.dict() for m in models.data]
+            elif isinstance(models, list):
+                serializable_models = models # 假设已经是列表
+            else:
+                 # 可能是其他对象，尝试直接迭代或报错
+                 logger.warning(f"Unknown model list format: {type(models)}")
+                 serializable_models = []
+
             model_list = {
                 "models": serializable_models
             }
