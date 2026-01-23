@@ -7,7 +7,7 @@ import yt_dlp
 from app.downloaders.base import Downloader, DownloadQuality, QUALITY_MAP
 from app.models.notes_model import AudioDownloadResult
 from app.utils.path_helper import get_data_dir
-from app.utils.url_parser import extract_video_id
+from app.utils.url_parser import extract_video_id, normalize_bilibili_url
 from app.services.cookie_manager import CookieConfigManager
 
 
@@ -49,6 +49,9 @@ class BilibiliDownloader(Downloader, ABC):
         cookie = self.cookie_manager.get("bilibili")
         if cookie:
             ydl_opts['http_headers'] = {'Cookie': cookie}
+
+        # 预处理 URL：处理短链接和中文括号
+        video_url = normalize_bilibili_url(video_url)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=True)
@@ -104,6 +107,9 @@ class BilibiliDownloader(Downloader, ABC):
         cookie = self.cookie_manager.get("bilibili")
         if cookie:
             ydl_opts['http_headers'] = {'Cookie': cookie}
+
+        # 预处理 URL：处理短链接和中文括号
+        video_url = normalize_bilibili_url(video_url)
 
         with yt_dlp.YoutubeDL(ydl_opts) as ydl:
             info = ydl.extract_info(video_url, download=True)

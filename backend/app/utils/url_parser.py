@@ -77,3 +77,24 @@ def resolve_bilibili_short_url(short_url: str) -> Optional[str]:
     except requests.RequestException as e:
         print(f"Error resolving short URL: {e}")
         return None
+
+
+def normalize_bilibili_url(url: str) -> str:
+    """
+    标准化 Bilibili URL，处理短链接和中文括号
+    
+    :param url: 原始 URL
+    :return: 标准化后的 URL
+    """
+    # 清除中文括号
+    url = re.sub(r"【.*?】", "", url).strip()
+    
+    # 如果是短链接，解析为完整 URL
+    if "b23.tv" in url:
+        short_url_match = re.search(r"https?://b23\.tv/[0-9A-Za-z]+", url)
+        if short_url_match:
+            resolved_url = resolve_bilibili_short_url(short_url_match.group(0))
+            if resolved_url:
+                return resolved_url
+    
+    return url

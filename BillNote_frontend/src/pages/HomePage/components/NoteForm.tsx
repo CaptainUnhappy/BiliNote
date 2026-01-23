@@ -71,7 +71,9 @@ const formSchema = z
       }
       else {
         try {
-          const url = new URL(video_url)
+          // 清理 B 站分享链接中的中文括号内容
+          const cleanedUrl = video_url.replace(/【.*?】/g, '').trim()
+          const url = new URL(cleanedUrl)
           if (!['http:', 'https:'].includes(url.protocol))
             throw new Error()
         }
@@ -132,11 +134,16 @@ const NoteForm = () => {
   const isMobile = useMobile()
   const [isUploading, setIsUploading] = useState(false)
   const [uploadSuccess, setUploadSuccess] = useState(false)
-  const [isUnderstandingExpanded, setIsUnderstandingExpanded] = useState(!isMobile)
+  const [isUnderstandingExpanded, setIsUnderstandingExpanded] = useState(false)
+
+  useEffect(() => {
+    // 强制：电脑版始终展开，手机版始终默认收起
+    setIsUnderstandingExpanded(!isMobile)
+  }, [isMobile])
   /* ---- 全局状态 ---- */
   const { addPendingTask, currentTaskId, setCurrentTask, getCurrentTask, retryTask } =
     useTaskStore()
-  const { loadEnabledModels, modelList, showFeatureHint, setShowFeatureHint } = useModelStore()
+  const { loadEnabledModels, modelList } = useModelStore()
 
   /* ---- 表单 ---- */
   const form = useForm<NoteFormValues>({
@@ -189,7 +196,7 @@ const NoteForm = () => {
       format: formData.format ?? ['toc', 'link', 'summary'],
     })
 
-    if (!isMobile || (formData.video_understand ?? false)) {
+    if (!isMobile) {
       setIsUnderstandingExpanded(true)
     }
   }, [
@@ -224,18 +231,24 @@ const NoteForm = () => {
   }
 
   const onSubmit = async (values: NoteFormValues) => {
-    console.log('Not even go here')
+    console.log('onSubmit triggered')
+    const skipRetry = isMobile // On mobile, we always create a new task
+
+    // 清理 URL 数据，确保发送给后端的是干净链接
+    const cleanedUrl = values.video_url?.replace(/【.*?】/g, '').trim()
+
     const payload = {
       ...values,
+      video_url: cleanedUrl,
       provider_id: modelList.find(m => m.model_name === values.model_name)?.provider_id || '',
-      task_id: currentTaskId || '',
+      task_id: (currentTaskId && !skipRetry) ? currentTaskId : '',
     }
-    if (currentTaskId) {
+
+    if (currentTaskId && !skipRetry) {
       retryTask(currentTaskId, payload as any)
       return
     }
 
-    // message.success('已提交任务')
     const data = await generateNote(payload as any)
     addPendingTask((data as any).task_id, values.platform, payload as any)
   }
@@ -249,21 +262,20 @@ const NoteForm = () => {
     setCurrentTask(null)
   }
   const FormButton = () => {
-    if (isMobile && editing) {
+    const label = generating ? '正在生成…' : (editing && !isMobile) ? '重新生成' : '生成笔记'
+
+    if (isMobile) {
       return (
         <Button
-          type="button"
-          variant="outline"
-          className="w-full"
-          onClick={handleCreateNew}
+          type="submit"
+          className="w-full bg-primary"
+          disabled={generating}
         >
-          <Plus className="mr-2 h-4 w-4" />
-          新建笔记
+          {generating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {label}
         </Button>
       )
     }
-
-    const label = generating ? '正在生成…' : editing ? '重新生成' : '生成笔记'
 
     return (
       <div className="flex gap-2">
@@ -305,7 +317,7 @@ const NoteForm = () => {
               render={({ field }) => (
                 <FormItem>
                   <Select
-                    disabled={!!editing}
+                    disabled={!!editing && !isMobile}
                     value={field.value}
                     onValueChange={field.onChange}
                     defaultValue={field.value}
@@ -338,10 +350,10 @@ const NoteForm = () => {
                 <FormItem className="flex-1">
                   {platform === 'local' ? (
                     <>
-                      <Input disabled={!!editing} placeholder="请输入本地视频路径" {...field} />
+                      <Input disabled={!!editing && !isMobile} placeholder="请输入本地视频路径" {...field} />
                     </>
                   ) : (
-                    <Input disabled={!!editing} placeholder="请输入视频网站链接" {...field} />
+                    <Input disabled={!!editing && !isMobile} placeholder="请输入视频网站链接" {...field} />
                   )}
                   <FormMessage style={{ display: 'none' }} />
                 </FormItem>
@@ -491,7 +503,7 @@ const NoteForm = () => {
               <FormField
                 control={form.control}
                 name="video_understand"
-                render={({ field }) => (
+                render={() => (
                   <FormItem>
                     <div className="flex items-center gap-2">
                       <FormLabel>启用</FormLabel>
@@ -575,9 +587,8 @@ const NoteForm = () => {
                     const isScreenshotChecked = v.includes('screenshot');
 
                     if (!wasScreenshotChecked && isScreenshotChecked) {
-                      // 勾选原片截图时，自动启用并展开视频理解
+                      // 勾选原片截图时，自动启用视频理解，但不强行展开
                       form.setValue('video_understand', true);
-                      setIsUnderstandingExpanded(true);
                     }
                     field.onChange(v);
                   }}

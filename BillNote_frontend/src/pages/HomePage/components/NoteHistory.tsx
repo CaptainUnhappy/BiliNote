@@ -54,12 +54,10 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
       </div>
       <div className="flex flex-col gap-3">
         {filteredTasks.map(task => {
-          const formattedDate = task.createdAt ? new Date(task.createdAt).toLocaleString('zh-CN', {
-            month: '2-digit',
-            day: '2-digit',
-            hour: '2-digit',
-            minute: '2-digit'
-          }).replace(/\//g, '-') : '';
+          const dateObj = new Date(task.createdAt);
+          const formattedDate = task.createdAt
+            ? `${(dateObj.getMonth() + 1).toString().padStart(2, '0')}-${dateObj.getDate().toString().padStart(2, '0')}`
+            : '';
 
           return (
             <div
@@ -76,10 +74,10 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
                     <img
                       src={task.audioMeta.cover_url ? `${task.audioMeta.cover_url}` : '/placeholder.png'}
                       alt="封面"
-                      className="h-14 w-20 rounded-lg object-cover shadow-sm"
+                      className="h-16 w-20 rounded-lg object-cover shadow-sm"
                     />
                   ) : (
-                    <div className="h-14 w-20 overflow-hidden rounded-lg shadow-sm">
+                    <div className="h-16 w-20 overflow-hidden rounded-lg shadow-sm">
                       <LazyImage
                         src={task.audioMeta.cover_url
                           ? `${baseURL}/image_proxy?url=${encodeURIComponent(task.audioMeta.cover_url)}`
