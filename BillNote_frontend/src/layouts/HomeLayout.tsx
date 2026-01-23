@@ -1,4 +1,4 @@
-import React, { FC } from 'react'
+import React, { FC, useState } from 'react'
 import { SlidersHorizontal } from 'lucide-react'
 import {
   Tooltip,
@@ -7,18 +7,27 @@ import {
   TooltipTrigger,
 } from '@/components/ui/tooltip.tsx'
 
-import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { ResizablePanel, ResizablePanelGroup, ResizableHandle } from '@/components/ui/resizable'
-import {ScrollArea} from "@/components/ui/scroll-area.tsx";
+import { ScrollArea } from "@/components/ui/scroll-area.tsx";
 import logo from '@/assets/icon.svg'
+import { useMobile } from '@/hooks/useMobile'
+import MobileHomeLayout from '@/layouts/MobileHomeLayout.tsx'
+
 interface IProps {
   NoteForm: React.ReactNode
   Preview: React.ReactNode
   History: React.ReactNode
 }
-const HomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
+
+const HomeLayout: FC<IProps> = (props) => {
+  const { NoteForm, Preview, History } = props
   const [, setShowSettings] = useState(false)
+  const isMobile = useMobile()
+
+  if (isMobile) {
+    return <MobileHomeLayout {...props} />
+  }
 
   return (
     <div className="flex h-screen flex-col overflow-hidden">
@@ -60,7 +69,7 @@ const HomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
         <ResizablePanel defaultSize={16} minSize={10} maxSize={30}>
           <aside className="flex h-full flex-col overflow-hidden border-r border-neutral-200 bg-white">
             <ScrollArea className="flex-1 overflow-auto">
-            <div className="">{History}</div>
+              <div className="">{History}</div>
             </ScrollArea>
           </aside>
         </ResizablePanel>
