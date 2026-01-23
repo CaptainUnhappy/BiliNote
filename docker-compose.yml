@@ -47,6 +47,7 @@ services:
       - "${APP_PORT}:80"
     volumes:
       - ./nginx/default.conf:/etc/nginx/conf.d/default.conf
+      - ./docker_data/screenshots:/usr/share/nginx/html/static/screenshots:ro
     depends_on:
       - backend
       - frontend

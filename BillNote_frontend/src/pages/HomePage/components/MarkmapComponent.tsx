@@ -60,10 +60,20 @@ export default function MarkmapEditor({
     }
   }
   
+  // 过滤掉图片相关的 Markdown 语法，避免在思维导图中显示图片
+  const getFilteredValue = (val: string) => {
+    // 移除标准图片语法 ![alt](url)
+    let filtered = val.replace(/!\[.*?\]\(.*?\)/g, '');
+    // 移除项目自定义的截图标记 *Screenshot- 或 Screenshot-[
+    filtered = filtered.replace(/(?:\*Screenshot-(\d{2}):(\d{2})|Screenshot-\[(\d{2}):(\d{2})\])/g, '');
+    return filtered;
+  };
+
   // 导出HTML思维导图
   const exportHtml = () => {
     try {
-      const { root } = transformer.transform(value)
+      const filteredValue = getFilteredValue(value);
+      const { root } = transformer.transform(filteredValue)
       const data = JSON.stringify(root)
       
       // 创建HTML内容
@@ -232,7 +242,8 @@ export default function MarkmapEditor({
   useEffect(() => {
     const mm = mmRef.current
     if (!mm) return
-    const { root } = transformer.transform(value)
+    const filteredValue = getFilteredValue(value);
+    const { root } = transformer.transform(filteredValue)
     mm.setData(root).then(() => mm.fit())
   }, [value])
 

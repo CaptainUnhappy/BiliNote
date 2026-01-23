@@ -29,8 +29,9 @@ export const useTaskStore = create<TaskStore>()(
       syncTasksWithServer: async () => {
         try {
           const res = await get_history()
-          if (res && res.data) {
-            const serverTasks = res.data.map((item: any) => ({
+          // request 拦截器已经返回了 res.data (即数组)，所以这里直接判断 res 是否为数组
+          if (res && Array.isArray(res)) {
+            const serverTasks = res.map((item: any) => ({
               id: item.task_id,
               status: 'SUCCESS',
               markdown: item.markdown,
@@ -38,7 +39,7 @@ export const useTaskStore = create<TaskStore>()(
               audioMeta: item.audio_meta,
               createdAt: item.created_at,
               formData: item.formData || {
-                video_url: '',
+                video_url: item.audio_meta?.video_url || '',
                 platform: item.audio_meta?.platform || '',
                 quality: 'fast',
                 model_name: '',
@@ -47,19 +48,25 @@ export const useTaskStore = create<TaskStore>()(
             }))
 
             set(state => {
-              const localTasks = state.tasks
+              // 1. 获取本地所有 "正在进行中" 或 "失败" 的任务 (服务器可能还没记录或记录为处理中)
+              const localPendingTasks = state.tasks.filter(
+                t => t.status === 'PENDING' || t.status === 'RUNNING'
+              )
+
+              // 2. 过滤掉那些已经在服务器列表中存在的 "Pending" 任务 (防止重复或状态倒退)
               const serverTaskIds = new Set(serverTasks.map((t: any) => t.id))
-              // 保留本地还在 PENDING 的任务，其他的以服务器为准，或者合并
-              // 这里采用合并策略：本地没有的任务加进去
-              const localIds = new Set(localTasks.map(t => t.id))
-              const combined = [
-                ...localTasks,
-                ...serverTasks.filter((t: any) => !localIds.has(t.id)),
-              ]
-              // 排序
+              const validLocalPending = localPendingTasks.filter(
+                t => !serverTaskIds.has(t.id)
+              )
+
+              // 3. 合并：保留本地正在跑的 + 服务器返回的所有历史记录
+              const combined = [...validLocalPending, ...serverTasks]
+
+              // 4. 按时间倒序排序
               combined.sort(
                 (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
               )
+
               return { tasks: combined }
             })
           }
