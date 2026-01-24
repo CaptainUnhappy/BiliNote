@@ -84,6 +84,7 @@ const NoteHistory: FC<NoteHistoryProps> = ({ onSelect, selectedId }) => {
                           : '/placeholder.png'
                         }
                         alt="封面"
+                        className="h-full w-full"
                       />
                     </div>
                   )}

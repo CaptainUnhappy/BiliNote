@@ -65,7 +65,7 @@ const MobileHomeLayout: FC<IProps> = ({ NoteForm, Preview, History }) => {
                     </div>
                 )}
                 {activeTab === 'history' && (
-                    <div className="h-full overflow-hidden bg-white">
+                    <div className="h-full overflow-y-auto bg-white">
                         {History}
                     </div>
                 )}
