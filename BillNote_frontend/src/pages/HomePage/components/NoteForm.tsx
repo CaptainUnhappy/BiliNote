@@ -40,6 +40,24 @@ import { useNavigate } from 'react-router-dom'
 import { useMobile } from '@/hooks/useMobile'
 import { cn } from '@/lib/utils'
 
+/* -------------------- 辅助函数 -------------------- */
+/**
+ * 清理 Bilibili URL，移除中文括号及其内容
+ * @param url 原始 URL
+ * @returns 清理后的 URL
+ */
+const cleanBilibiliUrl = (url: string): string => {
+  if (!url) return url
+
+  // 移除所有中文括号及其内容（支持多个）
+  let cleaned = url.replace(/【[^】]*】/g, '')
+
+  // 移除多余空格
+  cleaned = cleaned.trim().replace(/\s+/g, ' ')
+
+  return cleaned
+}
+
 /* -------------------- 校验 Schema -------------------- */
 const formSchema = z
   .object({
@@ -72,7 +90,7 @@ const formSchema = z
       else {
         try {
           // 清理 B 站分享链接中的中文括号内容
-          const cleanedUrl = video_url.replace(/【.*?】/g, '').trim()
+          const cleanedUrl = cleanBilibiliUrl(video_url)
           const url = new URL(cleanedUrl)
           if (!['http:', 'https:'].includes(url.protocol))
             throw new Error()
@@ -235,7 +253,7 @@ const NoteForm = () => {
     const skipRetry = isMobile // On mobile, we always create a new task
 
     // 清理 URL 数据，确保发送给后端的是干净链接
-    const cleanedUrl = values.video_url?.replace(/【.*?】/g, '').trim()
+    const cleanedUrl = cleanBilibiliUrl(values.video_url || '')
 
     const payload = {
       ...values,

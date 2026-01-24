@@ -22,7 +22,7 @@ const LazyImage: FC<LazyImageProps> = ({ src, alt, className, placeholder = '.sr
                     alt={alt}
                     loading="lazy"
                     onLoad={() => setLoaded(true)}
-                    className={clsx('transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0') +  ' h-10 w-14  rounded-md object-cover'}
+                    className={clsx('h-full w-full object-cover transition-opacity duration-300', loaded ? 'opacity-100' : 'opacity-0')}
                 />
             ) : (
                 <img src={placeholder} alt="loading" className="opacity-30" />

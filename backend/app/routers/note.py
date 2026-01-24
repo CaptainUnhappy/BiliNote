@@ -123,16 +123,63 @@ def get_history_list(limit: int = 50):
         results = []
         for task in tasks:
             result_path = os.path.join(NOTE_OUTPUT_DIR, f"{task.task_id}.json")
+            status_path = os.path.join(NOTE_OUTPUT_DIR, f"{task.task_id}.status.json")
+            
+            # 1. 优先检查是否有结果文件 (SUCCESS)
             if os.path.exists(result_path):
                 try:
                     with open(result_path, "r", encoding="utf-8") as f:
                         data = json.load(f)
-                        # 注入元数据供前端使用
                         data['task_id'] = task.task_id
                         data['created_at'] = task.created_at.isoformat()
+                        # 确保 status 为 SUCCESS
+                        data['status'] = TaskStatus.SUCCESS.value
                         results.append(data)
                 except Exception:
                     continue
+            # 2. 如果没有结果，检查是否有状态文件 (PENDING / FAILED / RUNNING)
+            elif os.path.exists(status_path):
+                try:
+                    with open(status_path, "r", encoding="utf-8") as f:
+                        status_data = json.load(f)
+                        # 构造返回数据结构，尽量与 result 保持一致，但主要包含 status
+                        data = {
+                            'task_id': task.task_id,
+                            'created_at': task.created_at.isoformat(),
+                            'status': status_data.get('status', TaskStatus.PENDING.value),
+                            'audio_meta': {
+                                'title': task.video_title or '未命名任务',
+                                'cover_url': '', # 数据库中可能没有封面，先留空或尝试从 status 如果有的话
+                                'video_url': task.video_url, # 数据库中有
+                                'platform': task.platform
+                            },
+                            'formData': {
+                                'video_url': task.video_url,
+                                'platform': task.platform
+                            }
+                        }
+                         # 如果 status data 里有更多信息，也可以合并
+                        results.append(data)
+                except Exception:
+                    continue
+            # 3. 如果文件都没有，但数据库有记录，说明刚创建还是 PENDING
+            else:
+                 data = {
+                    'task_id': task.task_id,
+                    'created_at': task.created_at.isoformat(),
+                    'status': TaskStatus.PENDING.value,
+                     'audio_meta': {
+                        'title': task.video_title or '未命名任务',
+                        'video_url': task.video_url,
+                        'platform': task.platform
+                    },
+                     'formData': {
+                         'video_url': task.video_url,
+                         'platform': task.platform
+                     }
+                }
+                 results.append(data)
+
         return R.success(results)
     except Exception as e:
         return R.error(msg=str(e))
