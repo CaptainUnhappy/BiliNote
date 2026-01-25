@@ -97,8 +97,8 @@ def list_and_delete_tasks():
         
         deleted_count = 0
         for video_id, platform, task_id in ids_to_delete:
-            # Delete from DB
-            cursor.execute("DELETE FROM video_tasks WHERE video_id = ? AND platform = ?", (video_id, platform))
+            # Delete from DB using unique task_id
+            cursor.execute("DELETE FROM video_tasks WHERE task_id = ?", (task_id,))
             if cursor.rowcount > 0:
                 deleted_count += 1
                 
