@@ -25,7 +25,6 @@ def get_task_title(task_id):
         try:
             with open(status_path, 'r', encoding='utf-8') as f:
                 data = json.load(f)
-                # Status file might not have title, but sometimes it does if we saved it there
                 return data.get('audio_meta', {}).get('title', 'Unknown Title (Status File)')
         except:
             pass
@@ -42,28 +41,28 @@ def list_and_delete_tasks():
         conn = sqlite3.connect(DB_PATH)
         cursor = conn.cursor()
         
-        # Select all douyin tasks
-        cursor.execute("SELECT id, video_id, task_id, created_at FROM video_tasks WHERE platform = 'douyin' ORDER BY created_at DESC")
+        # Select all tasks
+        cursor.execute("SELECT id, video_id, task_id, platform, created_at FROM video_tasks ORDER BY created_at DESC")
         tasks = cursor.fetchall()
         
         if not tasks:
-            print("No Douyin tasks found in database.")
+            print("No tasks found in database.")
             conn.close()
             return
 
-        print(f"\nFound {len(tasks)} Douyin tasks:")
-        print("-" * 100)
-        print(f"{'Idx':<5} | {'Created At':<20} | {'Video ID':<20} | {'Title'}")
-        print("-" * 100)
+        print(f"\nFound {len(tasks)} tasks:")
+        print("-" * 120)
+        print(f"{'Idx':<5} | {'Platform':<10} | {'Created At':<20} | {'Video ID':<20} | {'Title'}")
+        print("-" * 120)
 
         task_map = {}
         for idx, task in enumerate(tasks):
-            db_id, video_id, task_id, created_at = task
+            db_id, video_id, task_id, platform, created_at = task
             title = get_task_title(task_id)
-            print(f"{idx+1:<5} | {created_at:<20} | {video_id:<20} | {title}")
-            task_map[idx+1] = (video_id, task_id)
+            print(f"{idx+1:<5} | {platform:<10} | {created_at:<20} | {video_id:<20} | {title}")
+            task_map[idx+1] = (video_id, platform, task_id)
 
-        print("-" * 100)
+        print("-" * 120)
         print("\nEnter task numbers to delete (e.g., '1 3 5'), or 'all' to delete all, or 'q' to quit.")
         choice = input("Selection: ").strip()
 
@@ -72,7 +71,7 @@ def list_and_delete_tasks():
             conn.close()
             return
             
-        ids_to_delete = [] # List of (video_id, task_id)
+        ids_to_delete = [] # List of (video_id, platform, task_id)
         
         if choice.lower() == 'all':
              ids_to_delete = list(task_map.values())
@@ -97,15 +96,13 @@ def list_and_delete_tasks():
         print(f"\nDeleting {len(ids_to_delete)} tasks...")
         
         deleted_count = 0
-        for video_id, task_id in ids_to_delete:
+        for video_id, platform, task_id in ids_to_delete:
             # Delete from DB
-            cursor.execute("DELETE FROM video_tasks WHERE video_id = ? AND platform = 'douyin'", (video_id,))
+            cursor.execute("DELETE FROM video_tasks WHERE video_id = ? AND platform = ?", (video_id, platform))
             if cursor.rowcount > 0:
                 deleted_count += 1
                 
                 # Optional: Delete files?
-                # The user asked just to delete the record usually to fix the display, 
-                # but cleaning up files is good practice.
                 try:
                     result_file = os.path.join(NOTES_DIR, f"{task_id}.json")
                     status_file = os.path.join(NOTES_DIR, f"{task_id}.status.json")
