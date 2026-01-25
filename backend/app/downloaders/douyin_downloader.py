@@ -177,14 +177,48 @@ class DouyinDownloader(Downloader):
         except Exception as e:
             raise ValueError("Douyin msToken API{0}".format(e))
 
+    def gen_ttwid(self, headers) -> str:
+        try:
+            url = self.ttwid_config["url"]
+            data = self.ttwid_config["data"]
+            res = requests.post(
+                url,
+                data=data,
+                headers={
+                    "Content-Type": "application/json",
+                }
+            )
+            if res.status_code == 200:
+                for cookie in res.cookies:
+                    if cookie.name == 'ttwid':
+                        return cookie.value
+            return None
+        except Exception as e:
+            print("Error generating ttwid:", e)
+            return None
+
     def fetch_video_info(self, video_url: str) -> json:
         try:
 
             aweme_id = self.extract_video_id(video_url)
-            kwargs = self.headers_config
+            kwargs = self.headers_config.copy()
+            
+            # Generate tokens
+            ttwid = self.gen_ttwid(kwargs)
+            msToken = self.gen_real_msToken()
+            
+            # Set cookies
+            cookie_str = kwargs.get("Cookie") or ""
+            if ttwid:
+                cookie_str += f"; ttwid={ttwid}" if cookie_str else f"ttwid={ttwid}"
+            if msToken:
+                cookie_str += f"; msToken={msToken}" if cookie_str else f"msToken={msToken}"
+                
+            kwargs["Cookie"] = cookie_str
             print("@kwargs:", kwargs)
+            
             base_params = BaseRequestModel().model_dump()
-            base_params["msToken"] = self.gen_real_msToken()
+            base_params["msToken"] = msToken
 
             base_params["aweme_id"] = aweme_id
             bogus = ABogus()
