@@ -42,14 +42,22 @@ import { cn } from '@/lib/utils'
 
 /* -------------------- 辅助函数 -------------------- */
 /**
- * 清理 Bilibili URL，移除中文括号及其内容
- * @param url 原始 URL
+ * 清理视频 URL，移除干扰文本
+ * 支持 Bilibili 中文括号移除
+ * 支持 Douyin 分享文本提取 URL
+ * @param url 原始 URL 或分享文本
  * @returns 清理后的 URL
  */
-const cleanBilibiliUrl = (url: string): string => {
+const cleanVideoUrl = (url: string): string => {
   if (!url) return url
 
-  // 移除所有中文括号及其内容（支持多个）
+  // 1. 尝试从文本中提取 http/https链接
+  const urlMatch = url.match(/(https?:\/\/[^\s]+)/)
+  if (urlMatch) {
+    return urlMatch[0]
+  }
+
+  // 2. 移除所有中文括号及其内容（支持多个）- 针对 B 站纯净链接但带标题的情况
   let cleaned = url.replace(/【[^】]*】/g, '')
 
   // 移除多余空格
@@ -89,8 +97,8 @@ const formSchema = z
       }
       else {
         try {
-          // 清理 B 站分享链接中的中文括号内容
-          const cleanedUrl = cleanBilibiliUrl(video_url)
+          // 清理 B 站/抖音 分享链接
+          const cleanedUrl = cleanVideoUrl(video_url)
           const url = new URL(cleanedUrl)
           if (!['http:', 'https:'].includes(url.protocol))
             throw new Error()
@@ -253,7 +261,7 @@ const NoteForm = () => {
     const skipRetry = isMobile // On mobile, we always create a new task
 
     // 清理 URL 数据，确保发送给后端的是干净链接
-    const cleanedUrl = cleanBilibiliUrl(values.video_url || '')
+    const cleanedUrl = cleanVideoUrl(values.video_url || '')
 
     const payload = {
       ...values,

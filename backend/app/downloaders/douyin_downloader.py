@@ -130,9 +130,11 @@ class DouyinDownloader(Downloader):
         if len(video_url):
             video_url = video_url[0]
             try:
-                response = requests.head(video_url, allow_redirects=True)
+                # Use headers to avoid being blocked during redirect resolution
+                response = requests.head(video_url, allow_redirects=True, headers=self.headers_config)
                 url = response.url
             except Exception as e:
+                print(f"Error resolving URL {video_url}: {e}")
                 return ""
         patterns = [
             r'video/(\d+)',
