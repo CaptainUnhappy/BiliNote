@@ -134,6 +134,16 @@ def get_history_list(limit: int = 50):
                         data['created_at'] = task.created_at.isoformat()
                         # 确保 status 为 SUCCESS
                         data['status'] = TaskStatus.SUCCESS.value
+                        if 'audio_meta' in data:
+                            data['audio_meta']['video_id'] = task.video_id
+                        else:
+                             data['audio_meta'] = {
+                                'title': task.video_title or '未命名任务',
+                                'cover_url': '', 
+                                'video_url': task.video_url, 
+                                'platform': task.platform,
+                                'video_id': task.video_id
+                            }
                         results.append(data)
                 except Exception:
                     continue
