@@ -110,7 +110,7 @@ def run_note_task(task_id: str, video_url: str, platform: str, quality: Download
 def delete_task(data: RecordRequest):
     try:
         # TODO: 待持久化完成
-        # NoteGenerator().delete_note(video_id=data.video_id, platform=data.platform)
+        NoteGenerator().delete_note(video_id=data.video_id, platform=data.platform)
         return R.success(msg='删除成功')
     except Exception as e:
         return R.error(msg=e)
@@ -151,7 +151,8 @@ def get_history_list(limit: int = 50):
                                 'title': task.video_title or '未命名任务',
                                 'cover_url': '', # 数据库中可能没有封面，先留空或尝试从 status 如果有的话
                                 'video_url': task.video_url, # 数据库中有
-                                'platform': task.platform
+                                'platform': task.platform,
+                                'video_id': task.video_id
                             },
                             'formData': {
                                 'video_url': task.video_url,
@@ -171,7 +172,8 @@ def get_history_list(limit: int = 50):
                      'audio_meta': {
                         'title': task.video_title or '未命名任务',
                         'video_url': task.video_url,
-                        'platform': task.platform
+                        'platform': task.platform,
+                        'video_id': task.video_id
                     },
                      'formData': {
                          'video_url': task.video_url,

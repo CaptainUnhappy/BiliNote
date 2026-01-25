@@ -280,7 +280,7 @@ class DouyinDownloader(Downloader):
 
             return AudioDownloadResult(
                 file_path=output_path,
-                title=video_data['aweme_detail']['item_title'],
+                title=video_data['aweme_detail']['desc'] if video_data['aweme_detail'].get('desc') else video_data['aweme_detail'].get('item_title', '未命名笔记'),
                 duration=video_data['aweme_detail']['video']['duration'],
                 cover_url=video_data['aweme_detail']['video']['cover_original_scale']['url_list'][0] if
                 video_data['aweme_detail']['video']['cover'] else video_data['video']['big_thumbs']['img_url'],
